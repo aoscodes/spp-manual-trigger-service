@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Environment=CLOUDINARY_URL=cloudinary://295776721798926:1Fg62Dl4ohkUhOlFLTHHknXMozA@spp-production
-ExecStart=/usr/local/bin/node /home/pi/watcher/index.js 
+ExecStart=/usr/local/bin/node /home/pi/spp-manual-trigger-service/index.js 
 Type=simple
 User=pi
 Restart=always
