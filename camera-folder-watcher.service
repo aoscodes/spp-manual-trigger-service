@@ -8,7 +8,7 @@ ExecStart=/usr/local/bin/node /home/pi/spp-manual-trigger-service/index.js
 Type=simple
 User=pi
 Restart=always
-RestartSec=10s
+RestartSec=2s
 KillMode=process
 TimeoutSec=infinity
 
