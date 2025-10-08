@@ -32,7 +32,7 @@ const upload_cloudinary = async path => {
   return await cloudinary.uploader.upload(path, options)
 }
 
-const create_photo = async upload_data => api.post(`photos/${config.credentials.location.id}/${config.credentials.location.token}`, {
+const create_photo = async upload_data => api.post(`photos/${config.credentials.location.id}?token=${config.credentials.location.token}`, {
   width: upload_data.width,
   height: upload_data.height,
   path: upload_data.url,
