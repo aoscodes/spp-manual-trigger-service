@@ -51,14 +51,16 @@ chokidar.watch('/home/pi/images').on('add', async (path, _) => {
     throw e
   }
 
+  let photo
   try {
     console.log("creating photo on spp backend")
-    result = await create_photo(result)
-    console.log("created photo in spp backend", result)
+    photo = await create_photo(result)
+    console.log("created photo in spp backend", photo)
   } catch (e) {
     console.error("failed to create photo in spp backend", e)
     throw e
   }
+
 
   unlink(path, e => {
     if (e) {
