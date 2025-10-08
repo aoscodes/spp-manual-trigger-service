@@ -13,7 +13,7 @@ const config = JSON.parse(
 
 const api = axios.create({
   baseURL: config.api.production.apiRoot,
-  timeout: 1000,
+  timeout: 3000,
   headers: { "Content-Type": "application/json" },
 })
 
