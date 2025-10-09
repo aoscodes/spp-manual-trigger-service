@@ -55,7 +55,9 @@ chokidar.watch('/home/pi/images').on('add', async (path, _) => {
   let photo
   try {
     console.log("creating photo on spp backend")
-    const token = jwt.sign({user: config.credentials.admin}, config.JWTSecret)
+    const token = jwt.sign({ user: config.credentials.admin }, config.JWTSecret, {
+      expiresIn: '1m'
+    })
     photo = await create_photo(result, token)
     console.log("created photo in spp backend", photo)
   } catch (e) {
