@@ -1,12 +1,13 @@
 #!/bin/bash
-
 npm i
+
+sudo chown -R $(whoami) /home/pi/images
 
 sudo systemctl stop camera-folder-watcher
 sudo systemctl stop camera-watcher
 
-cp camera-folder-watcher.service /lib/systemd/system/camera-folder-watcher.service
-cp camera-watcher.service /lib/systemd/system/camera-watcher.service
+sudo cp camera-folder-watcher.service /lib/systemd/system/camera-folder-watcher.service
+sudo cp camera-watcher.service /lib/systemd/system/camera-watcher.service
 
 sudo systemctl daemon-reload
 
