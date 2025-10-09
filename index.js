@@ -3,6 +3,7 @@ import cloudinary from 'cloudinary'
 import axios from 'axios'
 import { readFile } from 'fs/promises'
 import { unlink } from 'fs'
+import jwt from 'jsonwebtoken'
 
 
 const config = JSON.parse(
@@ -32,7 +33,7 @@ const upload_cloudinary = async path => {
   return await cloudinary.uploader.upload(path, options)
 }
 
-const create_photo = async upload_data => api.post(`photos/${config.credentials.location.id}?token=${config.credentials.location.token}`, {
+const create_photo = async (upload_data, jwt) => api.post(`photos/${config.credentials.location.id}?token=${jwt}`, {
   width: upload_data.width,
   height: upload_data.height,
   path: upload_data.url,
@@ -54,7 +55,8 @@ chokidar.watch('/home/pi/images').on('add', async (path, _) => {
   let photo
   try {
     console.log("creating photo on spp backend")
-    photo = await create_photo(result)
+    const token = jwt.sign({user: config.credentials.admin}, config.JWTSecret)
+    photo = await create_photo(result, token)
     console.log("created photo in spp backend", photo)
   } catch (e) {
     console.error("failed to create photo in spp backend", e)
