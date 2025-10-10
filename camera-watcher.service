@@ -3,8 +3,6 @@ Description=watch-camera
 After=multi-user.target
 
 [Service]
-Type=simple
-User=pi
 ExecStart=/usr/local/bin/gphoto2 --filename '/home/pi/images/%%Y-%%m-%%d-%%H-%%M-%%S-%%f.%%C' --wait-event-and-download
 Restart=always
 RestartSec=2s
