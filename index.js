@@ -24,6 +24,18 @@ cld.config({
   secure: true,
 })
 
+const parse_for_phone = path => {
+  if (path.includes('phone_')) {
+    const number = path.slice(6, 16)
+    return number
+  }
+  else return false
+}
+const get_user_by_phone = async number => {
+  const result = await api.get('/photos/${number}')
+  return result
+}
+
 const upload_cloudinary = async path => {
   const options = {
     unique_filename: true,
@@ -37,12 +49,17 @@ const create_photo = async (upload_data, jwt) => api.post(`photos/${config.crede
   width: upload_data.width,
   height: upload_data.height,
   path: upload_data.url,
+  user_id: upload_data.user_id,
   isPublic: false
 })
 
 console.log("starting watcher")
 chokidar.watch('/home/pi/images').on('add', async (path, _) => {
   console.log("uploading to cloudinary", path)
+
+  const phone = parse_for_phone(path)
+  let user = phone ? get_user_by_phone(phone) : null;
+
   let result
   try {
     result = await upload_cloudinary(path)
@@ -53,18 +70,23 @@ chokidar.watch('/home/pi/images').on('add', async (path, _) => {
   }
 
   let photo
+
   try {
     console.log("creating photo on spp backend")
     const token = jwt.sign({ admin: config.credentials.admin }, config.JWTSecret, {
       expiresIn: '1m'
     })
+
+    if (user_id) {
+      result.user_id = user.id
+    }
+
     photo = await create_photo(result, token)
     console.log("created photo in spp backend", photo)
   } catch (e) {
     console.error("failed to create photo in spp backend", e)
     throw e
   }
-
 
   unlink(path, e => {
     if (e) {
