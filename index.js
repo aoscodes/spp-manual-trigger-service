@@ -1,99 +1,80 @@
 import chokidar from 'chokidar'
-import cloudinary from 'cloudinary'
+import { v2 as cloudinary } from 'cloudinary'
 import axios from 'axios'
-import { readFile } from 'fs/promises'
-import { unlink } from 'fs'
+import { readFile, unlink } from 'fs/promises'
+import { basename } from 'path'
 import jwt from 'jsonwebtoken'
 
+const config = JSON.parse(await readFile('/home/pi/config.json', 'utf8'))
 
-const config = JSON.parse(
-  await readFile(
-    new URL('/home/pi/config.json', import.meta.url)
-  )
-);
+cloudinary.config({ secure: true })
 
 const api = axios.create({
   baseURL: config.api.production.apiRoot,
   timeout: 5000,
-  headers: { "Content-Type": "application/json" },
+  headers: { 'Content-Type': 'application/json' },
 })
 
-const cld = cloudinary.v2
+/** Extracts E.164 phone number from filenames of the form phone_NNNNNNNNNN_NNN.jpg */
+const parsePhone = (filePath) => {
+  const m = basename(filePath).match(/^phone_(\d{10})_\d{3}\.jpg$/)
+  return m ? `+1${m[1]}` : null
+}
 
-cld.config({
-  secure: true,
-})
+console.log('starting watcher')
+chokidar.watch('/home/pi/images').on('add', async (filePath) => {
+  console.log('file detected:', filePath)
 
-const parse_for_phone = path => {
-  if (path.includes('phone_')) {
-    const number = path.slice(6, 16)
-    return number
+  const phone = parsePhone(filePath)
+  const adminJwt = jwt.sign(
+    { admin: config.credentials.admin },
+    config.JWTSecret,
+    { expiresIn: '1m' }
+  )
+  const headers = { Authorization: `Bearer ${adminJwt}` }
+
+  let userId = null
+  if (phone) {
+    try {
+      const userRes = await api.post('users/phone', { phone }, { headers })
+      userId = userRes.data.user.id
+      console.log('user resolved:', userId)
+    } catch (e) {
+      console.error('failed to resolve user by phone:', e.message)
+      // non-fatal: photo is still registered, just unassociated
+    }
   }
-  else return false
-}
-const get_user_by_phone = async number => {
-  const result = await api.get('/photos/${number}')
-  return result
-}
 
-const upload_cloudinary = async path => {
-  const options = {
-    unique_filename: true,
-    overwrite: true,
-  }
-
-  return await cloudinary.uploader.upload(path, options)
-}
-
-const create_photo = async (upload_data, jwt) => api.post(`photos/${config.credentials.location.id}?token=${jwt}`, {
-  width: upload_data.width,
-  height: upload_data.height,
-  path: upload_data.url,
-  user_id: upload_data.user_id,
-  isPublic: false
-})
-
-console.log("starting watcher")
-chokidar.watch('/home/pi/images').on('add', async (path, _) => {
-  console.log("uploading to cloudinary", path)
-
-  const phone = parse_for_phone(path)
-  let user = phone ? get_user_by_phone(phone) : null;
-
-  let result
+  let upload
   try {
-    result = await upload_cloudinary(path)
-    console.log("uploaded to cloudinary successfully!", result)
-  } catch (e) {
-    console.error("failed to upload to cloudinary", e)
-    throw e
-  }
-
-  let photo
-
-  try {
-    console.log("creating photo on spp backend")
-    const token = jwt.sign({ admin: config.credentials.admin }, config.JWTSecret, {
-      expiresIn: '1m'
+    upload = await cloudinary.uploader.upload(filePath, {
+      unique_filename: true,
+      overwrite: true,
     })
-
-    if (user_id) {
-      result.user_id = user.id
-    }
-
-    photo = await create_photo(result, token)
-    console.log("created photo in spp backend", photo)
+    console.log('uploaded to cloudinary:', upload.secure_url)
   } catch (e) {
-    console.error("failed to create photo in spp backend", e)
+    console.error('cloudinary upload failed:', e)
     throw e
   }
 
-  unlink(path, e => {
-    if (e) {
-      console.error("failed to unlink file", e)
-      throw e
-    }
-  })
-  console.log("unlinked file")
-})
+  try {
+    await api.post(
+      `photos/${config.credentials.location.id}`,
+      {
+        width: upload.width,
+        height: upload.height,
+        path: upload.secure_url,
+        userId,
+        isPublic: false,
+      },
+      { headers }
+    )
+    console.log('photo registered in API')
+  } catch (e) {
+    console.error('failed to register photo in API:', e)
+    throw e
+  }
 
+  await unlink(filePath)
+  console.log('deleted local file:', filePath)
+})
