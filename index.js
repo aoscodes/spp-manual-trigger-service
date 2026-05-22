@@ -10,7 +10,7 @@ const config = JSON.parse(await readFile('/home/pi/config.json', 'utf8'))
 cloudinary.config({ secure: true })
 
 const api = axios.create({
-  baseURL: config.api.production.apiRoot,
+  baseURL: config.environment == "production" ? config.api.production.apiRoot : config.api.staging.apiRoot,
   timeout: 5000,
   headers: { 'Content-Type': 'application/json' },
 })
