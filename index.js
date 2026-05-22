@@ -59,7 +59,7 @@ chokidar.watch('/home/pi/images').on('add', async (filePath) => {
 
   try {
     await api.post(
-      `photos/${config.credentials.location.id}`,
+      `photos/${config.credentials.kiosk.id}`,
       {
         width: upload.width,
         height: upload.height,
