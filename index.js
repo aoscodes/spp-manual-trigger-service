@@ -77,4 +77,4 @@ chokidar.watch('/home/pi/images').on('add', async (filePath) => {
 
   await unlink(filePath)
   console.log('deleted local file:', filePath)
-: WebGLQuery:
+})
