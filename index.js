@@ -54,7 +54,8 @@ chokidar.watch('/home/pi/images').on('add', async (filePath) => {
     console.log('uploaded to cloudinary:', upload.secure_url)
   } catch (e) {
     console.error('cloudinary upload failed:', e)
-    throw e
+
+
   }
 
   try {
@@ -72,9 +73,8 @@ chokidar.watch('/home/pi/images').on('add', async (filePath) => {
     console.log('photo registered in API')
   } catch (e) {
     console.error('failed to register photo in API:', e)
-    throw e
   }
 
   await unlink(filePath)
   console.log('deleted local file:', filePath)
-})
+: WebGLQuery:
