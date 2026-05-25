@@ -5,7 +5,7 @@ import { readFile, unlink } from 'fs/promises'
 import { basename } from 'path'
 import jwt from 'jsonwebtoken'
 
-const config = JSON.parse(await readFile('/home/pi/spp-kiosk/spp-kiosk/spp-kiosk-node/condig.json', 'utf8'))
+const config = JSON.parse(await readFile('/home/pi/spp-kiosk/spp-kiosk/spp-kiosk-node/config.json', 'utf8'))
 
 cloudinary.config({ secure: true })
 
